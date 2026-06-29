@@ -1,0 +1,134 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "ARM template to deploy an Azure Cache for Redis instance."
+  },
+  "parameters": {
+    "redisCacheName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure Cache for Redis instance."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for the Redis cache."
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "metadata": {
+        "description": "The pricing tier of the new Azure Cache for Redis."
+      }
+    },
+    "skuFamily": {
+      "type": "string",
+      "defaultValue": "C",
+      "allowedValues": [
+        "C",
+        "P"
+      ],
+      "metadata": {
+        "description": "The family for the sku."
+      }
+    },
+    "capacity": {
+      "type": "int",
+      "defaultValue": 0,
+      "allowedValues": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "metadata": {
+        "description": "The size of the new Azure Cache for Redis instance."
+      }
+    },
+    "enableNonSslPort": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Allow access via non-SSL port (6379)."
+      }
+    },
+    "minimumTlsVersion": {
+      "type": "string",
+      "defaultValue": "1.2",
+      "allowedValues": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ],
+      "metadata": {
+        "description": "Requires clients to use a specified TLS version (or higher)."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "environment": "dev",
+        "project": "redis-setup",
+        "managedBy": "ARM"
+      },
+      "metadata": {
+        "description": "Resource tags applied to all deployed resources."
+      }
+    }
+  },
+  "variables": {
+    "redisCacheName": "[toLower(parameters('redisCacheName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Cache/redis",
+      "apiVersion": "2023-08-01",
+      "name": "[variables('redisCacheName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "name": "[parameters('skuName')]",
+          "family": "[parameters('skuFamily')]",
+          "capacity": "[parameters('capacity')]"
+        },
+        "enableNonSslPort": "[parameters('enableNonSslPort')]",
+        "minimumTlsVersion": "[parameters('minimumTlsVersion')]"
+      }
+    }
+  ],
+  "outputs": {
+    "redisCacheName": {
+      "type": "string",
+      "value": "[variables('redisCacheName')]"
+    },
+    "redisCacheId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Cache/redis', variables('redisCacheName'))]"
+    },
+    "hostName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Cache/redis', variables('redisCacheName'))).hostName]"
+    },
+    "sslPort": {
+      "type": "int",
+      "value": "[reference(resourceId('Microsoft.Cache/redis', variables('redisCacheName'))).sslPort]"
+    },
+    "primaryKey": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.Cache/redis', variables('redisCacheName')), '2023-08-01').primaryKey]"
+    }
+  }
+}

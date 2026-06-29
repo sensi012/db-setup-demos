@@ -1,0 +1,329 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "ARM template to deploy an Azure Cosmos DB account with SQL API, a database, and a container — all fully parameterized."
+  },
+  "parameters": {
+    "accountName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 44,
+      "metadata": {
+        "description": "Cosmos DB account name (must be globally unique, lowercase letters and hyphens only)."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Primary Azure region for the Cosmos DB account."
+      }
+    },
+    "secondaryLocation": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional secondary region for geo-redundancy. Leave empty to disable."
+      }
+    },
+    "databaseName": {
+      "type": "string",
+      "defaultValue": "AppDatabase",
+      "metadata": {
+        "description": "Name of the Cosmos DB SQL database."
+      }
+    },
+    "containerName": {
+      "type": "string",
+      "defaultValue": "Items",
+      "metadata": {
+        "description": "Name of the Cosmos DB SQL container."
+      }
+    },
+    "partitionKeyPath": {
+      "type": "string",
+      "defaultValue": "/partitionKey",
+      "metadata": {
+        "description": "Partition key path for the container (must start with '/')."
+      }
+    },
+    "defaultConsistencyLevel": {
+      "type": "string",
+      "defaultValue": "Session",
+      "allowedValues": [
+        "Eventual",
+        "ConsistentPrefix",
+        "Session",
+        "BoundedStaleness",
+        "Strong"
+      ],
+      "metadata": {
+        "description": "Cosmos DB consistency model."
+      }
+    },
+    "maxStalenessPrefix": {
+      "type": "int",
+      "defaultValue": 100000,
+      "minValue": 10,
+      "maxValue": 2147483647,
+      "metadata": {
+        "description": "Max stale requests (applies only to BoundedStaleness)."
+      }
+    },
+    "maxIntervalInSeconds": {
+      "type": "int",
+      "defaultValue": 300,
+      "minValue": 5,
+      "maxValue": 86400,
+      "metadata": {
+        "description": "Max lag time in seconds (applies only to BoundedStaleness)."
+      }
+    },
+    "enableAutomaticFailover": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable automatic failover for multi-region accounts."
+      }
+    },
+    "enableMultipleWriteLocations": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable multi-region writes (active-active). Requires secondaryLocation."
+      }
+    },
+    "enableServerless": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Set to true for serverless capacity mode. When true, throughput settings are ignored."
+      }
+    },
+    "throughputType": {
+      "type": "string",
+      "defaultValue": "manual",
+      "allowedValues": ["manual", "autoscale"],
+      "metadata": {
+        "description": "Throughput allocation mode (manual RU/s or autoscale). Ignored in serverless mode."
+      }
+    },
+    "manualThroughput": {
+      "type": "int",
+      "defaultValue": 400,
+      "minValue": 100,
+      "maxValue": 1000000,
+      "metadata": {
+        "description": "Provisioned RU/s for manual throughput. Ignored when throughputType=autoscale or serverless=true."
+      }
+    },
+    "autoscaleMaxThroughput": {
+      "type": "int",
+      "defaultValue": 4000,
+      "minValue": 1000,
+      "maxValue": 1000000,
+      "metadata": {
+        "description": "Max RU/s ceiling for autoscale throughput. Ignored when throughputType=manual or serverless=true."
+      }
+    },
+    "enableFreeTier": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Apply the free tier discount (only one account per subscription can use free tier)."
+      }
+    },
+    "enablePublicNetworkAccess": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Allow public network access to the Cosmos DB account."
+      }
+    },
+    "enableAnalyticalStorage": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable Synapse Link / analytical store on the container."
+      }
+    },
+    "defaultTtlSeconds": {
+      "type": "int",
+      "defaultValue": -1,
+      "metadata": {
+        "description": "Default TTL in seconds for container items. -1 = TTL enabled but no default expiry. 0 = TTL disabled."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "environment": "dev",
+        "project": "cosmosdb-setup",
+        "managedBy": "ARM"
+      },
+      "metadata": {
+        "description": "Resource tags applied to all deployed resources."
+      }
+    }
+  },
+  "variables": {
+    "accountName": "[toLower(parameters('accountName'))]",
+    "consistencyPolicy": {
+      "Eventual": {
+        "defaultConsistencyLevel": "Eventual"
+      },
+      "ConsistentPrefix": {
+        "defaultConsistencyLevel": "ConsistentPrefix"
+      },
+      "Session": {
+        "defaultConsistencyLevel": "Session"
+      },
+      "BoundedStaleness": {
+        "defaultConsistencyLevel": "BoundedStaleness",
+        "maxStalenessPrefix": "[parameters('maxStalenessPrefix')]",
+        "maxIntervalInSeconds": "[parameters('maxIntervalInSeconds')]"
+      },
+      "Strong": {
+        "defaultConsistencyLevel": "Strong"
+      }
+    },
+    "primaryLocation": {
+      "locationName": "[parameters('location')]",
+      "failoverPriority": 0,
+      "isZoneRedundant": false
+    },
+    "secondaryLocationObject": {
+      "locationName": "[parameters('secondaryLocation')]",
+      "failoverPriority": 1,
+      "isZoneRedundant": false
+    },
+    "locations": "[if(empty(parameters('secondaryLocation')), array(variables('primaryLocation')), concat(array(variables('primaryLocation')), array(variables('secondaryLocationObject'))))]",
+    "capacityMode": "[if(parameters('enableServerless'), 'Serverless', 'Provisioned')]",
+    "manualThroughputObject": {
+      "resource": {
+        "throughput": "[parameters('manualThroughput')]"
+      }
+    },
+    "autoscaleThroughputObject": {
+      "resource": {
+        "autoscaleSettings": {
+          "maxThroughput": "[parameters('autoscaleMaxThroughput')]"
+        }
+      }
+    },
+    "throughputOptions": "[if(equals(parameters('throughputType'), 'autoscale'), variables('autoscaleThroughputObject'), variables('manualThroughputObject'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2024-02-15-preview",
+      "name": "[variables('accountName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "consistencyPolicy": "[variables('consistencyPolicy')[parameters('defaultConsistencyLevel')]]",
+        "locations": "[variables('locations')]",
+        "enableAutomaticFailover": "[parameters('enableAutomaticFailover')]",
+        "enableMultipleWriteLocations": "[parameters('enableMultipleWriteLocations')]",
+        "enableFreeTier": "[parameters('enableFreeTier')]",
+        "enableAnalyticalStorage": "[parameters('enableAnalyticalStorage')]",
+        "publicNetworkAccess": "[if(parameters('enablePublicNetworkAccess'), 'Enabled', 'Disabled')]",
+        "capacity": {
+          "totalThroughputLimit": -1
+        },
+        "capabilities": "[if(parameters('enableServerless'), array(createObject('name', 'EnableServerless')), json('[]'))]",
+        "backupPolicy": {
+          "type": "Periodic",
+          "periodicModeProperties": {
+            "backupIntervalInMinutes": 240,
+            "backupRetentionIntervalInHours": 8,
+            "backupStorageRedundancy": "Geo"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2024-02-15-preview",
+      "name": "[format('{0}/{1}', variables('accountName'), parameters('databaseName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('accountName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "[parameters('databaseName')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2024-02-15-preview",
+      "name": "[format('{0}/{1}/{2}', variables('accountName'), parameters('databaseName'), parameters('containerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('accountName'), parameters('databaseName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "[parameters('containerName')]",
+          "partitionKey": {
+            "paths": [
+              "[parameters('partitionKeyPath')]"
+            ],
+            "kind": "Hash",
+            "version": 2
+          },
+          "indexingPolicy": {
+            "indexingMode": "consistent",
+            "includedPaths": [
+              {
+                "path": "/*"
+              }
+            ],
+            "excludedPaths": [
+              {
+                "path": "/_etag/?"
+              }
+            ],
+            "compositeIndexes": []
+          },
+          "defaultTtl": "[parameters('defaultTtlSeconds')]",
+          "analyticalStorageTtl": "[if(parameters('enableAnalyticalStorage'), -1, json('null'))]"
+        },
+        "options": "[if(parameters('enableServerless'), json('{}'), variables('throughputOptions'))]"
+      }
+    }
+  ],
+  "outputs": {
+    "cosmosDbAccountName": {
+      "type": "string",
+      "value": "[variables('accountName')]"
+    },
+    "cosmosDbAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('accountName'))]"
+    },
+    "documentEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('accountName'))).documentEndpoint]"
+    },
+    "primaryConnectionString": {
+      "type": "string",
+      "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('accountName')), '2024-02-15-preview').connectionStrings[0].connectionString]"
+    },
+    "primaryReadonlyKey": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('accountName')), '2024-02-15-preview').primaryReadonlyMasterKey]"
+    },
+    "databaseName": {
+      "type": "string",
+      "value": "[parameters('databaseName')]"
+    },
+    "containerName": {
+      "type": "string",
+      "value": "[parameters('containerName')]"
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "serverName": {
+      "value": "3mtt-azure-mysql-db-001"
+    },
+    "administratorLogin": {
+      "value": "mysqladmin"
+    },
+    "administratorLoginPassword": {
+      "value": "P@ssw0rd1234!"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "version": {
+      "value": "8.0.21"
+    },
+    "skuName": {
+      "value": "Standard_B1ms"
+    },
+    "skuTier": {
+      "value": "Burstable"
+    },
+    "storageSizeGB": {
+      "value": 20
+    },
+    "storageIops": {
+      "value": 360
+    },
+    "backupRetentionDays": {
+      "value": 7
+    },
+    "geoRedundantBackup": {
+      "value": "Disabled"
+    },
+    "highAvailabilityMode": {
+      "value": "Disabled"
+    },
+    "databaseName": {
+      "value": "appdatabase"
+    },
+    "allowAllIPs": {
+      "value": true
+    },
+    "tags": {
+      "value": {
+        "environment": "dev",
+        "project": "mysqldb-setup",
+        "team": "cloud-engineering",
+        "managedBy": "ARM"
+      }
+    }
+  }
+}

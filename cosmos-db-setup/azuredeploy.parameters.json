@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "accountName": {
+      "value": "3mtt-azure-cosmos-db-001"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "secondaryLocation": {
+      "value": ""
+    },
+    "databaseName": {
+      "value": "AppDatabase"
+    },
+    "containerName": {
+      "value": "Items"
+    },
+    "partitionKeyPath": {
+      "value": "/partitionKey"
+    },
+    "defaultConsistencyLevel": {
+      "value": "Session"
+    },
+    "maxStalenessPrefix": {
+      "value": 100000
+    },
+    "maxIntervalInSeconds": {
+      "value": 300
+    },
+    "enableAutomaticFailover": {
+      "value": false
+    },
+    "enableMultipleWriteLocations": {
+      "value": false
+    },
+    "enableServerless": {
+      "value": false
+    },
+    "throughputType": {
+      "value": "manual"
+    },
+    "manualThroughput": {
+      "value": 400
+    },
+    "autoscaleMaxThroughput": {
+      "value": 4000
+    },
+    "enableFreeTier": {
+      "value": false
+    },
+    "enablePublicNetworkAccess": {
+      "value": true
+    },
+    "enableAnalyticalStorage": {
+      "value": false
+    },
+    "defaultTtlSeconds": {
+      "value": -1
+    },
+    "tags": {
+      "value": {
+        "environment": "dev",
+        "project": "cosmosdb-setup",
+        "team": "cloud-engineering",
+        "managedBy": "ARM"
+      }
+    }
+  }
+}
