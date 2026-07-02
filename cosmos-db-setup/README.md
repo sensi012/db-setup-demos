@@ -70,7 +70,7 @@ Open `azuredeploy.parameters.json` and update at minimum:
 
 Account name rules: 3–44 characters, lowercase letters and hyphens only, globally unique.
 
-### Step 2 — Create a Resource Group (if needed)
+### Step 2 — Create a Resource Group
 
 ```bash
 az group create --name rg-cosmosdb-dev --location eastus
@@ -79,6 +79,7 @@ az group create --name rg-cosmosdb-dev --location eastus
 ### Step 3 — Validate the template (recommended)
 
 ```bash
+# ensure you are in the cosmos-db-setup directory
 az deployment group validate \
   --resource-group rg-cosmosdb-dev \
   --template-file azuredeploy.json \

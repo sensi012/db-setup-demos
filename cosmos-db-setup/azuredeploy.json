@@ -201,15 +201,11 @@
     "locations": "[if(empty(parameters('secondaryLocation')), array(variables('primaryLocation')), concat(array(variables('primaryLocation')), array(variables('secondaryLocationObject'))))]",
     "capacityMode": "[if(parameters('enableServerless'), 'Serverless', 'Provisioned')]",
     "manualThroughputObject": {
-      "resource": {
-        "throughput": "[parameters('manualThroughput')]"
-      }
+      "throughput": "[parameters('manualThroughput')]"
     },
     "autoscaleThroughputObject": {
-      "resource": {
-        "autoscaleSettings": {
-          "maxThroughput": "[parameters('autoscaleMaxThroughput')]"
-        }
+      "autoscaleSettings": {
+        "maxThroughput": "[parameters('autoscaleMaxThroughput')]"
       }
     },
     "throughputOptions": "[if(equals(parameters('throughputType'), 'autoscale'), variables('autoscaleThroughputObject'), variables('manualThroughputObject'))]"
@@ -272,8 +268,7 @@
             "paths": [
               "[parameters('partitionKeyPath')]"
             ],
-            "kind": "Hash",
-            "version": 2
+            "kind": "Hash"
           },
           "indexingPolicy": {
             "indexingMode": "consistent",
@@ -286,11 +281,9 @@
               {
                 "path": "/_etag/?"
               }
-            ],
-            "compositeIndexes": []
+            ]
           },
-          "defaultTtl": "[parameters('defaultTtlSeconds')]",
-          "analyticalStorageTtl": "[if(parameters('enableAnalyticalStorage'), -1, json('null'))]"
+          "defaultTtl": "[parameters('defaultTtlSeconds')]"
         },
         "options": "[if(parameters('enableServerless'), json('{}'), variables('throughputOptions'))]"
       }

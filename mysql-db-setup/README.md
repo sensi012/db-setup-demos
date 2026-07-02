@@ -60,7 +60,7 @@ Open `azuredeploy.parameters.json` and update at minimum:
 "administratorLoginPassword": { "value": "YOUR-SECURE-PASSWORD" }
 ```
 
-### Step 2 — Create a Resource Group (if needed)
+### Step 2 — Create a Resource Group
 
 ```bash
 az group create --name rg-mysqldb-dev --location eastus
@@ -69,6 +69,7 @@ az group create --name rg-mysqldb-dev --location eastus
 ### Step 3 — Validate the template (recommended)
 
 ```bash
+# ensure you are in the mysql-db-setup directory
 az deployment group validate \
   --resource-group rg-mysqldb-dev \
   --template-file azuredeploy.json \
@@ -142,6 +143,8 @@ INSERT INTO items (name, price, stock) VALUES
 
 SELECT * FROM items;
 ```
+
+*to exit the mysql CLI, type `exit;` and press Enter*
 
 ### Option B — Python Testing (Programmatic)
 
