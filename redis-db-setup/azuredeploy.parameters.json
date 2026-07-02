@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "redisCacheName": {
-      "value": "3mtt-azure-redis-001"
+      "value": "fykio-3mtt-azure-redis-001"
     },
     "location": {
       "value": "eastus"

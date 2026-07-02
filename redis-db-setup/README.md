@@ -62,6 +62,7 @@ az group create --name rg-redis-dev --location eastus
 ### Step 3 — Validate the template (recommended)
 
 ```bash
+# ensure you are in the redis-db-setup directory
 az deployment group validate \
   --resource-group rg-redis-dev \
   --template-file azuredeploy.json \
@@ -104,13 +105,31 @@ az deployment group show \
 
 ## Testing with Data
 
-### Option A — Redis CLI (Terminal)
+### Option A1 — Redis CLI (Terminal)
 
 If you have `redis-cli` installed and want to connect over SSL/TLS, you might need to use `stunnel` (since native redis-cli doesn't always support TLS easily).
 
 Alternatively, if you temporally set `enableNonSslPort` to `true` (not recommended for production):
 ```bash
 redis-cli -h myapp-redis-dev-001.redis.cache.windows.net -p 6379 -a <your-primary-key>
+```
+
+```text
+> PING
+PONG
+> SET session:101 "{'user':'john','role':'admin'}" EX 3600
+OK
+> GET session:101
+"{'user':'john','role':'admin'}"
+```
+
+### Option A2 — Redis Console on Azure Portal
+
+```bash
+# go to the azure portal
+# search for your redis cache
+# click on "Console" in the left-hand menu
+# use the commands below
 ```
 
 ```text
