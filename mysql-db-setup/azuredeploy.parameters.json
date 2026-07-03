@@ -3,10 +3,10 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "serverName": {
-      "value": "fykio-3mtt-azure-mysql-db-001"
+      "value": "isaiah-3mtt-azure-mysql-db-001"
     },
     "administratorLogin": {
-      "value": "fykiomysqladmin"
+      "value": "isaiahmysqladmin"
     },
     "administratorLoginPassword": {
       "value": "P@ssw0rd1234!"
